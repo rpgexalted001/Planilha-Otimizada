@@ -53,18 +53,26 @@ jobs:
 
       - name: Verify project version contract
         shell: bash
+        env:
+          TRIGGER_EVENT: ${{ github.event_name }}
+          TRIGGER_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+          REQUESTED_VERSION: ${{ inputs.version }}
         run: |
           set -euo pipefail
           project_name="$(sed -n 's/^rootProject\.name = "\(Exalted\.[0-9][0-9]*\)"$/\1/p' settings.gradle.kts)"
           test -n "$project_name"
-          if [ "${{ github.event_name }}" = "push" ]; then
-            requested_name="${{ github.event.head_commit.message }}"
+          if [ "$TRIGGER_EVENT" = "push" ]; then
+            requested_name="$TRIGGER_COMMIT_MESSAGE"
             if [ "$requested_name" != "$project_name" ]; then
               echo "::error::Use commit Exalted.N para autorizar compilação ou [skip ci] para desenvolvimento."
               exit 1
             fi
           else
-            requested_name="Exalted.${{ inputs.version }}"
+            if [[ ! "${REQUESTED_VERSION:-}" =~ ^[0-9]+$ ]]; then
+              echo "::error::Número da versão inválido."
+              exit 1
+            fi
+            requested_name="Exalted.$REQUESTED_VERSION"
           fi
           test "$project_name" = "$requested_name" || { echo "::error::Versão informada não corresponde ao projeto: $project_name"; exit 1; }
           grep -Fq 'val exaltedProjectName = rootProject.name' app/build.gradle.kts
@@ -236,9 +244,11 @@ jobs:
 
       - name: Package source snapshot
         shell: bash
+        env:
+          VERIFIED_PROJECT_NAME: ${{ steps.project-version.outputs.name }}
         run: |
           set -euo pipefail
-          project_name="${{ steps.project-version.outputs.name }}"
+          project_name="$VERIFIED_PROJECT_NAME"
           source_zip="${project_name}.zip"
           git archive --format=zip --output="$source_zip" HEAD
           test -s "$source_zip"

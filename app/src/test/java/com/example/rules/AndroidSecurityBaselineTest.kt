@@ -7,6 +7,15 @@ import org.junit.Test
 
 class AndroidSecurityBaselineTest {
     @Test
+    fun `workflow usa variaveis de ambiente para entradas externas`() {
+        val workflow = File(projectRoot(), ".github/workflows/build_apk.yml").readText()
+        assertTrue(workflow.contains("TRIGGER_COMMIT_MESSAGE:"))
+        assertTrue(workflow.contains("REQUESTED_VERSION:"))
+        assertTrue(workflow.contains("Número da versão inválido."))
+        assertTrue(workflow.contains("requested_name="))
+    }
+
+    @Test
     fun `build nao distribui chave debug de forma silenciosa`() {
         val workflow = File(projectRoot(), ".github/workflows/build_apk.yml").readText()
         assertTrue(workflow.contains("allow_debug_signing:"))
