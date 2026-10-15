@@ -32,7 +32,10 @@ jobs:
           set -euo pipefail
           chmod +x gradlew
           ./gradlew --version | tee gradle-wrapper-version.txt
-          grep -Eq '^Gradle 9[.]8[.]1        shell: bash
+          grep -Fx 'Gradle 9.8.1' gradle-wrapper-version.txt
+
+      - name: Run complete debug unit-test suite without producing APK
+        shell: bash
         run: |
           set -euo pipefail
           chmod +x gradlew
@@ -75,51 +78,5 @@ jobs:
             app/build/test-results/testDebugUnitTest/
             app/build/reports/tests/testDebugUnitTest/
             gradle-wrapper-version.txt
-          if-no-files-found: warn
-          retention-days: 7
- gradle-wrapper-version.txt
-
-      - name: Run complete debug unit-test suite without producing APK
-        shell: bash
-        run: |
-          set -euo pipefail
-          chmod +x gradlew
-          ./gradlew testDebugUnitTest --stacktrace --console=plain --no-configuration-cache
-
-      - name: Confirm Exalted rule and security regression gates
-        shell: bash
-        run: |
-          set -euo pipefail
-          results_dir="app/build/test-results/testDebugUnitTest"
-          required=(
-            AndroidSecurityBaselineTest
-            CanonicalEncounterRulesTest
-            EncounterGenerationRulesRegressionTest
-            EncounterMechanicalGoldenSnapshotTest
-            DragonBloodedSignaturePolicyTest
-            NpcExternalImportValidatorTest
-            EncounterNpcStoreRecoveryTest
-            DocumentImportServiceTest
-            GenericShareCodecHardeningTest
-            SheetPersistenceCoordinatorTest
-            BackupPersistenceCoordinatorTest
-            SheetIndexStoreRecoveryTest
-            ExaltedDocumentFoldersContractTest
-          )
-          for name in "${required[@]}"; do
-            if ! compgen -G "$results_dir/TEST-*${name}.xml" > /dev/null; then
-              echo "::error::Missing critical regression test: $name"
-              exit 1
-            fi
-          done
-
-      - name: Upload diagnostic reports
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: pr-regressions-${{ github.event.pull_request.number }}-${{ github.run_attempt }}
-          path: |
-            app/build/test-results/testDebugUnitTest/
-            app/build/reports/tests/testDebugUnitTest/
           if-no-files-found: warn
           retention-days: 7
