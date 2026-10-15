@@ -33,7 +33,8 @@ class EncounterNpcCharmSpacingContractTest {
     fun `caixa selecionada usa paleta propria do NPC`() {
         assertTrue(section.contains("if (selecionado) visualTemplate.accentBright.copy(alpha = 0.25f)"))
         assertTrue(section.contains("if (selecionado) 2.dp else 1.dp"))
-        assertTrue(section.contains("if (selecionado) visualTemplate.accentBright else visualTemplate.onSurface"))
+        assertTrue(section.contains("color = visualTemplate.onSurface"))
+        assertTrue(section.contains(".semantics { selected = selecionado }"))
     }
 
     @Test

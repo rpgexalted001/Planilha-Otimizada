@@ -43,6 +43,8 @@ import androidx.compose.runtime.remember
 import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -1010,7 +1012,7 @@ fun NpcEncontroCard(
                             nomeExibicao,
                             style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp, lineHeight = 20.sp),
                             fontWeight = FontWeight.SemiBold,
-                            color = if (selecionado) visualTemplate.accentBright else visualTemplate.onSurface,
+                            color = visualTemplate.onSurface,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 // Margens externas impedem que duas caixas se encostem.
@@ -1035,6 +1037,8 @@ fun NpcEncontroCard(
                                         mostrarDetalhes = true
                                     }
                                 )
+                                // Leitores de tela também identificam a seleção.
+                                .semantics { selected = selecionado }
                                 .padding(horizontal = 12.dp, vertical = 10.dp),
                             forceStroke = false
                         )
