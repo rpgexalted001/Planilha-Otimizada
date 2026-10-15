@@ -25,7 +25,14 @@ class EncounterHealthGestureContractTest {
     fun `encounter charm and spell details remain long press only`() {
         val charm = source.substringAfter("groupAccumulatedEncounterCharms(encantosDaGaveta)")
             .substringBefore("if (mostrarDetalhes)")
-        assertTrue(charm.contains("detectTapGestures(onLongPress = { mostrarDetalhes = true })"))
+        // Toque curto agora marca/desmarca visualmente a caixa;
+        // somente o toque prolongado abre o diálogo.
+        assertTrue(charm.contains(".feedbackCombinedClickable("))
+        assertTrue(charm.contains("encantoSelecionado = if (selecionado) null else chaveDaCaixa"))
+        assertTrue(charm.contains("onLongClick = {"))
+        assertTrue(charm.contains("mostrarDetalhes = true"))
+        assertTrue(!charm.substringBefore("onLongClick = {").contains("mostrarDetalhes = true"))
+        assertTrue(!charm.contains("detectTapGestures("))
         val spell = source.substringAfter("npc.feiticos.forEach { feitico ->")
             .substringBefore("if (mostrarDetalhesFeitico)")
         assertTrue(spell.contains("detectTapGestures(onLongPress = { mostrarDetalhesFeitico = true })"))
@@ -56,8 +63,10 @@ class EncounterHealthGestureContractTest {
 
     @Test
     fun `xp actions preserve both controls without compressing narrow rows`() {
-        val xp = source.substringAfter("// Botões de XP ficam na linha imediatamente")
-            .substringBefore("// XP movido pra cá")
+        val anchor = "// Três linhas de respiro entre Encantos/Feitiços e os controles de XP."
+        assertTrue(source.contains(anchor))
+        val xp = source.substringAfter(anchor).substringBefore("// XP movido pra cá")
+        assertTrue(xp.contains("Spacer(modifier = Modifier.height(36.dp))"))
         assertTrue(xp.contains("val xpActionsScrollable = maxWidth < 320.dp"))
         assertTrue(xp.contains("Modifier.horizontalScroll(rememberScrollState())"))
         assertTrue(xp.contains("Modifier.width(156.dp) else Modifier.weight(1f)"))

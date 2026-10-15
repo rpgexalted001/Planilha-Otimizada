@@ -30,7 +30,15 @@ class EncounterNpcCacheContractTest {
         assertTrue(source.contains(
             "remember(npc.id, feitico.nome)"
         ))
-        assertTrue(source.contains(".pointerInput(npc.id, c.nome)"))
+        val charm = source.substringAfter("groupAccumulatedEncounterCharms(encantosDaGaveta)")
+            .substringBefore("if (mostrarDetalhes)")
+        // A seleção permanece isolada ao NPC; o toque longo continua
+        // abrindo os detalhes somente do Encanto correspondente.
+        assertTrue(charm.contains(".feedbackCombinedClickable("))
+        assertTrue(charm.contains("onLongClick = {"))
+        assertTrue(charm.contains("mostrarDetalhes = true"))
+        assertTrue(charm.contains(".semantics { selected = selecionado }"))
+        assertTrue(source.contains("var encantoSelecionado by remember(npc.id, npc.charms)"))
         assertTrue(source.contains(".pointerInput(npc.id, feitico.nome)"))
     }
 

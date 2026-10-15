@@ -6,6 +6,9 @@ run-name: ${{ github.event_name == 'push' && github.event.head_commit.message ||
 
 on:
   push:
+    # O Dependabot trabalha em branches próprias. Elas nunca podem
+    # autorizar um APK, mesmo quando o bot rebasa settings.gradle.kts.
+    branches: [main]
     paths:
       - ".github/build-authorization.txt"
       - "settings.gradle.kts"
@@ -28,6 +31,8 @@ concurrency:
 jobs:
   test-and-build:
     name: Test + assembleRelease
+    # Defesa adicional contra disparos de qualquer branch de PR/bot.
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     env:
