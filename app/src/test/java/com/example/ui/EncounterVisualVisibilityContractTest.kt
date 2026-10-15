@@ -23,8 +23,16 @@ class EncounterVisualVisibilityContractTest {
     @Test
     fun `charm drawer heading remains visible and interactive`() {
         assertTrue(npcCard.contains("text = \"\$habilidade (\${encantosDaGaveta.size})\""))
-        assertTrue(npcCard.contains(".border(2.dp, visualTemplate.accentBright, RoundedCornerShape(8.dp))"))
-        assertTrue(npcCard.contains("gavetasExpandidas = if (expandida)"))
+        val drawer = npcCard.substringAfter("val encantosPorHabilidade")
+            .substringBefore("// Gaveta exclusiva de Feitiços da Aba 11.")
+        // A seleção pertence ao cabeçalho: borda reforçada e semântica,
+        // mantendo o título legível nas três paletas.
+        assertTrue(drawer.contains("val selecionada = expandida && gavetaSelecionada == habilidade"))
+        assertTrue(drawer.contains("if (selecionada) 3.dp else 1.5.dp"))
+        assertTrue(drawer.contains("if (selecionada) visualTemplate.accentBright else visualTemplate.outline"))
+        assertTrue(drawer.contains(".semantics { selected = selecionada }"))
+        assertTrue(drawer.contains("color = visualTemplate.accentBright"))
+        assertTrue(drawer.contains("gavetasExpandidas = gavetasExpandidas + habilidade"))
     }
 
     @Test
