@@ -10,7 +10,7 @@
 # mas as classes nunca eram corretamente conectadas ao empacotamento
 # final do Android, resultando num .apk sem a MainActivity dentro.
 agp = "9.3.3"
-kotlin = "2.2.10"
+kotlin = "2.4.21"
 coreKtx = "1.15.0"
 coreSplashscreen = "1.2.0"
 androidxTestCore = "1.6.1"
