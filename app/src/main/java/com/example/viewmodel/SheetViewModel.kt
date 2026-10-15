@@ -64,7 +64,14 @@ class SheetViewModel(application: Application) : AndroidViewModel(application) {
     private var appEmPrimeiroPlano = true
 
     fun onAppForegrounded() { appEmPrimeiroPlano = true }
-    fun onAppBackgrounded() { appEmPrimeiroPlano = false }
+    fun onAppBackgrounded() {
+        appEmPrimeiroPlano = false
+        // O processo pode ser encerrado antes do debounce de 400 ms.
+        // Enfileira o snapshot final assim que o app perde o primeiro plano,
+        // sem executar gravação de planilha na thread de interface.
+        repository.saveActiveSheet(_sheetState.value)
+        repository.salvarIniciativas(iniciativasController.state.value)
+    }
 
     private val repository = SheetRepository(application)
     private val _sheetState = MutableStateFlow(CharacterSheet())

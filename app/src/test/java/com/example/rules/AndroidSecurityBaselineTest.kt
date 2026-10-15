@@ -38,6 +38,17 @@ class AndroidSecurityBaselineTest {
     }
 
     @Test
+    fun `background enfileira snapshot antes de eventual encerramento`() {
+        val viewModel = File(
+            projectRoot(),
+            "app/src/main/java/com/example/viewmodel/SheetViewModel.kt"
+        ).readText()
+        val lifecycle = viewModel.substringAfter("fun onAppBackgrounded() {").substringBefore("\\n    private val repository")
+        assertTrue(lifecycle.contains("repository.saveActiveSheet(_sheetState.value)"))
+        assertTrue(lifecycle.contains("repository.salvarIniciativas(iniciativasController.state.value)"))
+    }
+
+    @Test
     fun `manifest mantem superficie Android minima`() {
         val manifest = File(projectRoot(), "app/src/main/AndroidManifest.xml").readText()
         assertFalse(manifest.contains("android.permission.INTERNET"))
