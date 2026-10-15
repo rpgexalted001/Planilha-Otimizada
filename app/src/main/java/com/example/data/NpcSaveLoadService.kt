@@ -84,6 +84,18 @@ object NpcSaveLoadService {
         }
     }
 
+    /** Importa arquivo público escolhido pelo usuário, mesmo após reinstalação. */
+    suspend fun carregarDocumento(context: Context, uri: android.net.Uri): NpcEncontro = withContext(Dispatchers.IO) {
+        try {
+            val json = DocumentImportService.read(context, uri)
+            NpcEncontroJsonCodec.decode(json).copy(id = UUID.randomUUID().toString())
+        } catch (e: NpcSaveCorruptedException) {
+            throw e
+        } catch (e: Exception) {
+            throw NpcSaveCorruptedException("Arquivo de NPC inválido ou grande demais.", e)
+        }
+    }
+
     suspend fun listarSalvos(context: Context): List<File> = withContext(Dispatchers.IO) {
         diretorio(context).listFiles { f ->
             f.isFile && f.name.contains("(NPC)") && f.name.endsWith(SAVE_EXTENSION)

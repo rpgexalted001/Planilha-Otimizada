@@ -475,6 +475,9 @@ class SheetViewModel(application: Application) : AndroidViewModel(application) {
     }
     fun exportarComoCodigo(): Result<String> = fileManagementActions.exportarComoCodigo()
 
+    fun importarPlanilhaDeArquivo(json: String): Result<Unit> =
+        fileManagementActions.importarPlanilhaJson(json)
+
     fun importarPlanilhaPorCodigo(codigo: String): com.example.data.ShareCodeCodec.ResultadoImportacao =
         com.example.data.ShareCodeCodec.importar(codigo, encantoCatalog.definitions, feiticariaCatalog.definitions)
     fun aplicarPlanilhaImportada(sheet: CharacterSheet) = fileManagementActions.aplicarPlanilhaImportada(sheet)
@@ -885,6 +888,10 @@ class SheetViewModel(application: Application) : AndroidViewModel(application) {
         if (encounterNpcActionsLazy.isInitialized()) {
             encounterNpcActionsLazy.value.dispose()
         }
+        // O último estado ainda pode estar no debounce de 400 ms.
+        // Enfileira o snapshot atual antes de fechar e descarregar o worker.
+        repository.saveActiveSheet(_sheetState.value)
+        repository.salvarIniciativas(iniciativasController.state.value)
         repository.close()
         super.onCleared()
     }

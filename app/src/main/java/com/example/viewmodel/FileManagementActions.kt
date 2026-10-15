@@ -67,6 +67,29 @@ class FileManagementActions(
         com.example.ui.theme.aplicarPaletaPorTemplate(normalized.tipoPersonagem)
     }
 
+    /** Restaura uma cópia JSON pública sem reutilizar o ID do aparelho de origem. */
+    fun importarPlanilhaJson(json: String): Result<Unit> = runCatching {
+        require(json.toByteArray(Charsets.UTF_8).size <= com.example.data.DocumentImportService.MAX_DOCUMENT_BYTES) {
+            "Arquivo excede o limite de 4 MB."
+        }
+        val root = org.json.JSONObject(json)
+        require(
+            root.optString("id").isNotBlank() &&
+                root.optString("tipoPersonagem").isNotBlank() &&
+                root.optJSONObject("attributes") != null &&
+                root.optJSONObject("abilities") != null
+        ) { "Arquivo não é uma planilha válida do aplicativo." }
+        val importada = com.example.data.CharacterSheetJsonCodec.decode(json)
+        require(CharacterType.isSupported(importada.tipoPersonagem)) { "Tipo de Exaltado inválido." }
+        aplicarPlanilhaImportada(importada.copy(
+            id = UUID.randomUUID().toString(),
+            numeroSequencial = 0,
+            dataSalvamento = ""
+        ))
+        // Grava imediatamente; não depende do próximo ciclo de debounce.
+        repository.saveActiveSheet(sheetState.value)
+    }
+
     fun listarBackupsPeriodicos(): List<SheetRepository.BackupSnapshot> =
         repository.listarBackups()
 

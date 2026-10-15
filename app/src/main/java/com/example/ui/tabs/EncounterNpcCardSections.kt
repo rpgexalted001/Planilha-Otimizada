@@ -101,6 +101,12 @@ internal fun NpcCardCarregarDialog(
     var salvos by remember { mutableStateOf<List<java.io.File>>(emptyList()) }
     var carregandoSalvos by remember { mutableStateOf(true) }
     var arquivoEmCarregamento by remember { mutableStateOf<java.io.File?>(null) }
+    var documentoEmCarregamento by remember { mutableStateOf<android.net.Uri?>(null) }
+    val selecionarDocumento = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.OpenDocument()
+    ) { uri: android.net.Uri? ->
+        if (uri != null) documentoEmCarregamento = uri
+    }
     LaunchedEffect(visible) {
         if (visible) {
             carregandoSalvos = true
@@ -126,6 +132,20 @@ internal fun NpcCardCarregarDialog(
             erroCarregamento = "Não foi possível carregar o NPC salvo."
         } finally {
             arquivoEmCarregamento = null
+        }
+    }
+    LaunchedEffect(documentoEmCarregamento) {
+        val uri = documentoEmCarregamento ?: return@LaunchedEffect
+        try {
+            val carregado = com.example.data.NpcSaveLoadService.carregarDocumento(context, uri)
+            erroCarregamento = null
+            onCarregarNpc(carregado)
+        } catch (e: com.example.data.NpcSaveCorruptedException) {
+            erroCarregamento = "O arquivo selecionado é inválido ou excede 4 MB."
+        } catch (e: Exception) {
+            erroCarregamento = "Não foi possível importar o arquivo selecionado."
+        } finally {
+            documentoEmCarregamento = null
         }
     }
     AlertDialog(
@@ -174,6 +194,12 @@ internal fun NpcCardCarregarDialog(
                     }
                 }
             }
+        },
+        dismissButton = {
+            com.example.ui.components.GildedDialogTextButton(
+                text = "Escolher arquivo",
+                onClick = { selecionarDocumento.launch(arrayOf("*/*")) }
+            )
         },
         confirmButton = {
             com.example.ui.components.GildedDialogButton(text = "Fechar", onClick = onDismiss, visualTemplate = visualTemplate)

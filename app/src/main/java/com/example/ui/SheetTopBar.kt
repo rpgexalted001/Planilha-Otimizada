@@ -23,6 +23,9 @@ import com.example.ui.components.*
 import com.example.ui.theme.*
 import com.example.viewmodel.SheetViewModel
 import kotlinx.coroutines.*
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.platform.LocalContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -57,6 +60,28 @@ internal fun SheetTopBar(
     // Passo 9/12 — composição adaptativa sem criar um fluxo Compact paralelo.
     // O mesmo cabeçalho preserva conteúdo e ações; apenas redistribui espaço.
     val visual = LocalExaltedVisualTemplate.current
+    val contextoArquivos = LocalContext.current
+    val importarArquivoJson = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) {
+            scope.launch {
+                val arquivo = withContext(Dispatchers.IO) {
+                    runCatching { com.example.data.DocumentImportService.read(contextoArquivos, uri) }
+                }
+                val resultado: Result<Unit> = arquivo.fold(
+                    onSuccess = { viewModel.importarPlanilhaDeArquivo(it) },
+                    onFailure = { Result.failure(it) }
+                )
+                resultado.fold(
+                    onSuccess = {
+                        snackbarHostState.showSnackbar("Planilha recuperada do arquivo. Use Salvar para exportar uma nova cópia.")
+                    },
+                    onFailure = {
+                        snackbarHostState.showSnackbar("Não foi possível importar a planilha: ${it.message ?: "arquivo inválido"}")
+                    }
+                )
+            }
+        }
+    }
 
     // APPROVED VISUAL CUSTOMIZATION
     // DO NOT REMOVE OR MODIFY WITHOUT VISUAL IMPACT REVIEW
@@ -229,6 +254,9 @@ internal fun SheetTopBar(
             title={AppText("Carregar",color=visual.accentBright,fontWeight=FontWeight.Bold,textAlign=TextAlign.Center,maxLines=2,overflow=TextOverflow.Ellipsis,modifier=Modifier.fillMaxWidth(), forceStroke = true)},
             text={Column(verticalArrangement=Arrangement.spacedBy(4.dp)){
                 DropdownMenuItem(text={AppText("Local")},onClick={onShowCarregarMenu(false);onBuscaPlanilhasSalvas("");onShowSheetsListDialog(true)},
+    modifier = Modifier.feedbackOnPress(enabled = true)
+)
+                DropdownMenuItem(text={AppText("Arquivo JSON (Jogador)")},onClick={onShowCarregarMenu(false);importarArquivoJson.launch(arrayOf("*/*"))},
     modifier = Modifier.feedbackOnPress(enabled = true)
 )
                 DropdownMenuItem(text={AppText("Por código")},onClick={onShowCarregarMenu(false);onShowCodeImportDialog(true)},
