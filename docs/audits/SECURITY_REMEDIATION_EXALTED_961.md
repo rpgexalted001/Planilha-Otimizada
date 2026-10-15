@@ -54,3 +54,59 @@ Commits: 4f098494, cbc228f, 0fb0dc4, 852cb0c.
 Não declarar a correção comprovada em execução antes da compilação e de testes em
 Android reais ou emuladores. O sucesso anterior de Exalted.961 é do código ANTERIOR
 a estes commits, não deste pacote.
+
+
+## Continuação da auditoria e remediação — 15/10/2026
+
+Commits adicionais:
+- b30cad90: cópias privadas de entradas corrompidas do índice de planilhas;
+- c59b1c10: Dependabot semanal e revisão de dependências em PR;
+- 4cf9db5b: artefatos debug separados e marcados TEST-ONLY;
+- cb5b937a: salvamento no ciclo de vida ao ir para segundo plano;
+- e370cc69: testes unitários de regressão em Pull Requests;
+- afb22fdf: validação estrutural prévia da importação pública de NPC;
+- 68b4f501: testes de recuperação/importação obrigatórios nos workflows;
+- a8e78650: workflow CodeQL Kotlin de execução manual;
+- a0ea26cc: restauração do contrato textual do PDF sem perder aviso de privacidade.
+
+### Primeira execução real de testes de Pull Request
+
+Duas execuções de PR Dependabot produziram 1.160 testes executados,
+com 1 falha de contrato textual: EncounterPdfExportContractTest exigia
+a frase 'PDF salvo em Gerador Harmônico/NPC\'s:'.
+O código havia mudado a mensagem para indicar que a pasta era pública;
+o commit a0ea26cc restaurou a frase exigida e manteve indicação explícita
+de armazenamento público. Essa correção ainda NÃO foi revalidada numa
+nova execução de testes da branch principal.
+
+### Pré-requisito externo bloqueando Dependency Review
+
+A execução do workflow 'Dependency security review' informou:
+'Dependency review is not supported on this repository. Please ensure
+that Dependency graph is enabled'.
+
+Ação necessária pelo administrador:
+https://github.com/rpgexalted001/Planilha-Otimizada/settings/security_analysis
+Habilitar Dependency graph e, se disponível, Dependabot alerts e security updates.
+O repositório é público; o problema é configuração externa à árvore de código.
+
+Dependabot abriu PRs de atualização de AGP, Kotlin, Compose BOM, Gradle e
+GitHub Actions. **Não fundir automaticamente**, pois é necessária compatibilidade
+com AGP 9.x, Gradle 9.8, testes mecânicos dos três tipos de Exaltado e
+validação de atualização do APK assinado.
+
+### Limitações ainda existentes
+
+- O APK Exalted.961 anterior não contém estes commits.
+- A correção do contrato do PDF ainda precisa ser executada em CI.
+- Auditoria CodeQL criada, mas não executada; ela requer compilação Kotlin
+  para produzir uma base de análise útil, embora não gere APK.
+- Testes de UI instrumentados, backup/restore após reinstalação em aparelhos
+  e continuidade do certificado de assinatura ainda requerem validação.
+- Salvamento final síncrono no onCleared ainda deve ser medido sob I/O lento,
+  porque pode prejudicar a responsividade; o flush ao ir para background
+  foi acrescentado como mitigação.
+- Sem ativar Dependency graph, o novo check não pode inspecionar
+  vulnerabilidades de dependências.
+- Mudanças de fonte/documentação usam [skip ci] e não alteraram
+  settings.gradle.kts; não foi autorizada nova compilação de APK.
