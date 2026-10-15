@@ -43,7 +43,7 @@ class AndroidSecurityBaselineTest {
             projectRoot(),
             "app/src/main/java/com/example/viewmodel/SheetViewModel.kt"
         ).readText()
-        val lifecycle = viewModel.substringAfter("fun onAppBackgrounded() {").substringBefore("\\n    private val repository")
+        val lifecycle = viewModel.substringAfter("fun onAppBackgrounded() {").substringBefore("    private val repository")
         assertTrue(lifecycle.contains("repository.saveActiveSheet(_sheetState.value)"))
         assertTrue(lifecycle.contains("repository.salvarIniciativas(iniciativasController.state.value)"))
     }

@@ -1,0 +1,70 @@
+# Valida PRs sem gerar APK nem utilizar segredos de assinatura.
+# As verificações precisam ser exigidas nas regras de proteção da branch.
+name: Exalted PR regression tests
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  unit-regressions:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout proposed changes
+        uses: actions/checkout@v6
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v5
+
+      - name: Run complete debug unit-test suite without producing APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x gradlew
+          ./gradlew testDebugUnitTest --stacktrace --console=plain --no-configuration-cache
+
+      - name: Confirm Exalted rule and security regression gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          results_dir="app/build/test-results/testDebugUnitTest"
+          required=(
+            AndroidSecurityBaselineTest
+            CanonicalEncounterRulesTest
+            EncounterGenerationRulesRegressionTest
+            EncounterMechanicalGoldenSnapshotTest
+            DragonBloodedSignaturePolicyTest
+            DocumentImportServiceTest
+            GenericShareCodecHardeningTest
+            SheetPersistenceCoordinatorTest
+            BackupPersistenceCoordinatorTest
+            SheetIndexStoreRecoveryTest
+            ExaltedDocumentFoldersContractTest
+          )
+          for name in "${required[@]}"; do
+            if ! compgen -G "$results_dir/TEST-*${name}.xml" > /dev/null; then
+              echo "::error::Missing critical regression test: $name"
+              exit 1
+            fi
+          done
+
+      - name: Upload diagnostic reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: pr-regressions-${{ github.event.pull_request.number }}-${{ github.run_attempt }}
+          path: |
+            app/build/test-results/testDebugUnitTest/
+            app/build/reports/tests/testDebugUnitTest/
+          if-no-files-found: warn
+          retention-days: 7
