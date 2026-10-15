@@ -1353,7 +1353,7 @@ fun NpcEncontroCard(
                 npcIoScope.launch {
                     val arquivo = com.example.ui.tabs.EncounterCombatEquations.gerarPdfNpc(context, npc)
                     operacaoNpcEmAndamento = false
-                    val mensagem = if (arquivo != null) "PDF salvo na pasta pública Documentos/NPC's: ${arquivo.name}" else "Falha ao gerar o PDF"
+                    val mensagem = if (arquivo != null) "PDF salvo em Gerador Harmônico/NPC's: ${arquivo.name} (pasta pública Documentos)" else "Falha ao gerar o PDF"
                     android.widget.Toast.makeText(context, mensagem, android.widget.Toast.LENGTH_LONG).show()
                 }
                 }
