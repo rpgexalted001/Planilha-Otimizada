@@ -16,12 +16,26 @@ class NpcStore(private val prefs: SharedPreferences) {
         val raw = prefs.getString(KEY, null) ?: return emptyList()
         return try {
             val array = JSONArray(raw)
-            (0 until array.length()).map { index -> ModelJsonCodecs.npcFromJson(array.getJSONObject(index)) }
+            buildList {
+                for (index in 0 until array.length()) {
+                    try {
+                        add(ModelJsonCodecs.npcFromJson(array.getJSONObject(index)))
+                    } catch (e: Exception) {
+                        onError(IllegalArgumentException("NPC manual corrompido no índice $index", e))
+                        if (!prefs.contains(KEY_QUARANTINE)) {
+                            prefs.edit().putString(KEY_QUARANTINE, raw).apply()
+                        }
+                    }
+                }
+            }
         } catch (e: Exception) {
             onError(e)
             emptyList()
         }
     }
 
-    private companion object { const val KEY = "exalted_npcs" }
+    private companion object {
+        const val KEY = "exalted_npcs"
+        const val KEY_QUARANTINE = "exalted_npcs_quarantine"
+    }
 }
