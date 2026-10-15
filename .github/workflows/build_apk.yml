@@ -15,6 +15,11 @@ on:
         description: "Número da versão (ex.: 797)"
         required: true
         type: string
+      allow_debug_signing:
+        description: "Somente teste: permitir assinatura debug quando NENHUM secret existir"
+        required: false
+        default: false
+        type: boolean
 
 concurrency:
   group: build-${{ github.ref }}
@@ -83,17 +88,28 @@ jobs:
         shell: bash
         env:
           EXALTED_KEYSTORE_BASE64: ${{ secrets.SIGNING_KEY }}
+          DEBUG_SIGNING_OPT_IN: ${{ github.event_name == 'workflow_dispatch' && inputs.allow_debug_signing }}
         run: |
           set -euo pipefail
           if [ -z "${EXALTED_KEYSTORE_BASE64:-}" ] || [ -z "${EXALTED_KEYSTORE_PASSWORD:-}" ] || [ -z "${EXALTED_KEY_ALIAS:-}" ] || [ -z "${EXALTED_KEY_PASSWORD:-}" ]; then
-            echo "::warning::Persistent signing secrets are not configured; this run will use the Android debug key."
-            exit 0
+            if [ "${DEBUG_SIGNING_OPT_IN:-false}" = "true" ] &&
+               [ -z "${EXALTED_KEYSTORE_BASE64:-}" ] &&
+               [ -z "${EXALTED_KEYSTORE_PASSWORD:-}" ] &&
+               [ -z "${EXALTED_KEY_ALIAS:-}" ] &&
+               [ -z "${EXALTED_KEY_PASSWORD:-}" ]; then
+              echo "::warning::TEST ONLY: signing the APK with an ephemeral Android debug key. Do not distribute or treat it as an update to an official release."
+              exit 0
+            fi
+            echo "::error::Persistent release signing is required. Configure SIGNING_KEY, KEYSTORE_PASSWORD, KEY_ALIAS and KEY_PASSWORD. Debug signing requires an explicit manual opt-in with no partial secrets."
+            exit 1
           fi
           mkdir -p "$RUNNER_TEMP/exalted-signing"
           printf '%s' "$EXALTED_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/exalted-signing/exalted-release.jks"
           chmod 600 "$RUNNER_TEMP/exalted-signing/exalted-release.jks"
+          keytool -list -keystore "$RUNNER_TEMP/exalted-signing/exalted-release.jks" \
+            -storepass "$EXALTED_KEYSTORE_PASSWORD" -alias "$EXALTED_KEY_ALIAS" > /dev/null
           echo "EXALTED_KEYSTORE_PATH=$RUNNER_TEMP/exalted-signing/exalted-release.jks" >> "$GITHUB_ENV"
-          echo "Persistent signing key materialized for this runner only."
+          echo "Persistent signing key materialized and validated for this runner only."
 
       - name: Test + engineering gate + assemble APK
         shell: bash
@@ -184,6 +200,10 @@ jobs:
           aapt="${ANDROID_HOME}/build-tools/${build_tools}/aapt"
           zipalign="${ANDROID_HOME}/build-tools/${build_tools}/zipalign"
           "$apksigner" verify --verbose --print-certs "$apk" | tee apk-signature.txt
+          if [ -n "${EXALTED_KEYSTORE_PATH:-}" ] && grep -Fq 'CN=Android Debug' apk-signature.txt; then
+            echo "::error::Official release APK was signed with an Android debug certificate."
+            exit 1
+          fi
           if [ -n "${EXALTED_KEYSTORE_PATH:-}" ]; then
             echo "PERSISTENT_SIGNING=true" | tee apk-signing-mode.txt
           else

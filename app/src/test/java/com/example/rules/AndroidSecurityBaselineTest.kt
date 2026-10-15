@@ -6,6 +6,16 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class AndroidSecurityBaselineTest {
+    @Test
+    fun `build nao distribui chave debug de forma silenciosa`() {
+        val workflow = File(projectRoot(), ".github/workflows/build_apk.yml").readText()
+        assertTrue(workflow.contains("allow_debug_signing:"))
+        assertTrue(workflow.contains("inputs.allow_debug_signing"))
+        assertTrue(workflow.contains("Persistent release signing is required"))
+        assertTrue(workflow.contains("CN=Android Debug"))
+    }
+
+
     private fun projectRoot(): File {
         var current = File(System.getProperty("user.dir") ?: ".").absoluteFile
         repeat(6) {
