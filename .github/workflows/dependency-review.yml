@@ -1,0 +1,22 @@
+# Bloqueia a introdução de dependências com vulnerabilidades conhecidas.
+# Executa somente em PR, sem compilar APK e sem permissões de escrita.
+name: Dependency security review
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  dependency-review:
+    name: Review dependency changes
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Review vulnerable dependencies
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+          fail-on-scopes: development, runtime, unknown
