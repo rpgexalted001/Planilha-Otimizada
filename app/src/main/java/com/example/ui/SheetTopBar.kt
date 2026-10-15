@@ -60,6 +60,13 @@ internal fun SheetTopBar(
     // Passo 9/12 — composição adaptativa sem criar um fluxo Compact paralelo.
     // O mesmo cabeçalho preserva conteúdo e ações; apenas redistribui espaço.
     val visual = LocalExaltedVisualTemplate.current
+    val falhaExportacao by viewModel.documentExportError.collectAsState()
+    LaunchedEffect(falhaExportacao) {
+        falhaExportacao?.let { erro ->
+            viewModel.clearDocumentExportError()
+            snackbarHostState.showSnackbar(erro)
+        }
+    }
     val contextoArquivos = LocalContext.current
     val importarArquivoJson = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {

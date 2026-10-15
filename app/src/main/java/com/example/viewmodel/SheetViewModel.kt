@@ -458,6 +458,9 @@ class SheetViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     // --- Gestão de arquivo/sessão e Planilha Concluída — ver FileManagementActions.kt ---
+    val documentExportError: kotlinx.coroutines.flow.StateFlow<String?> = repository.documentExportError
+    fun clearDocumentExportError() = repository.clearDocumentExportError()
+
     fun reloadSavedSheets() = fileManagementActions.reloadSavedSheets()
     fun loadSheet(sheet: CharacterSheet) = fileManagementActions.loadSheet(sheet)
     // "Novo" reseta TUDO — incluindo NPCs, que vivem fora de CharacterSheet

@@ -18,6 +18,16 @@ import com.example.model.RatingStyle
  */
 class SheetRepository(context: Context) {
     private val fileContext = context.applicationContext
+    private val _documentExportError = kotlinx.coroutines.flow.MutableStateFlow<String?>(null)
+    val documentExportError: kotlinx.coroutines.flow.StateFlow<String?> = _documentExportError
+
+    fun clearDocumentExportError() { _documentExportError.value = null }
+
+    private fun reportDocumentExportError(message: String, error: Exception) {
+        _documentExportError.value = message
+        logErroInterno(message, error)
+    }
+
     private val documentExportScope = kotlinx.coroutines.CoroutineScope(
         kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.IO
     )
@@ -34,7 +44,7 @@ class SheetRepository(context: Context) {
                     out.write(CharacterSheetJsonCodec.encode(sheet).toByteArray(Charsets.UTF_8))
                 }
             } catch (e: Exception) {
-                logErroInterno("Falha ao publicar planilha em Gerador Harmônico/Jogador", e)
+                reportDocumentExportError("Não foi possível exportar a planilha para Documents/Jogador.", e)
             }
         }
     }
@@ -49,7 +59,7 @@ class SheetRepository(context: Context) {
                     fileContext, ExaltedDocumentFolders.PLAYER, name, "text/plain"
                 ) { out -> out.write(codigo.toByteArray(Charsets.UTF_8)) }
             } catch (e: Exception) {
-                logErroInterno("Falha ao exportar código de Jogador", e)
+                reportDocumentExportError("Não foi possível exportar o código para Documents/Jogador.", e)
             }
         }
     }
@@ -63,7 +73,7 @@ class SheetRepository(context: Context) {
                     fileContext, ExaltedDocumentFolders.NPC, name, "text/plain"
                 ) { output -> output.write(codigo.toByteArray(Charsets.UTF_8)) }
             } catch (e: Exception) {
-                logErroInterno("Falha ao exportar código de NPCs", e)
+                reportDocumentExportError("Não foi possível exportar o código para Documents/NPC's.", e)
             }
         }
     }

@@ -11,6 +11,23 @@ class ExaltedDocumentFoldersContractTest {
     private val actions = File("src/main/java/com/example/viewmodel/FileManagementActions.kt").readText()
     private val npcSaves = File("src/main/java/com/example/data/NpcSaveLoadService.kt").readText()
 
+    @Test fun `failed public document writes are surfaced to UI`() {
+        val screen = File("src/main/java/com/example/ui/SheetTopBar.kt").readText()
+        val viewModel = File("src/main/java/com/example/viewmodel/SheetViewModel.kt").readText()
+        assertTrue(repository.contains("reportDocumentExportError"))
+        assertTrue(viewModel.contains("val documentExportError"))
+        assertTrue(screen.contains("viewModel.documentExportError.collectAsState()"))
+        assertTrue(screen.contains("snackbarHostState.showSnackbar(erro)"))
+    }
+
+    @Test fun `public documents can be imported via Android file picker`() {
+        val npcDialog = File("src/main/java/com/example/ui/tabs/EncounterNpcCardSections.kt").readText()
+        val topBar = File("src/main/java/com/example/ui/SheetTopBar.kt").readText()
+        assertTrue(npcDialog.contains("ActivityResultContracts.OpenDocument()"))
+        assertTrue(topBar.contains("ActivityResultContracts.OpenDocument()"))
+        assertTrue(topBar.contains("importarArquivoJson.launch"))
+    }
+
     @Test fun `public documents use app label and separate player NPC folders`() {
         assertTrue(storage.contains("const val APP = \"Gerador Harmônico\""))
         assertTrue(storage.contains("const val PLAYER = \"Jogador\""))
