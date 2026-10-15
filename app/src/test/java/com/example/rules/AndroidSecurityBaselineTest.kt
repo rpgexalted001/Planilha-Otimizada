@@ -22,6 +22,9 @@ class AndroidSecurityBaselineTest {
         assertTrue(workflow.contains("inputs.allow_debug_signing"))
         assertTrue(workflow.contains("Persistent release signing is required"))
         assertTrue(workflow.contains("CN=Android Debug"))
+        assertTrue(workflow.contains("if: steps.signing.outputs.mode == 'official'"))
+        assertTrue(workflow.contains("if: steps.signing.outputs.mode == 'test'"))
+        assertTrue(workflow.contains("DEBUG-TEST-ONLY"))
     }
 
 
