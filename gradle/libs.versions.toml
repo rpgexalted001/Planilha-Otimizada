@@ -9,7 +9,7 @@
 # Kotlin compilava (via dependência transitiva do plugin do Compose),
 # mas as classes nunca eram corretamente conectadas ao empacotamento
 # final do Android, resultando num .apk sem a MainActivity dentro.
-agp = "9.3.3"
+agp = "9.4.1"
 kotlin = "2.2.10"
 coreKtx = "1.15.0"
 coreSplashscreen = "1.2.0"
