@@ -1328,6 +1328,12 @@ fun NpcEncontroCard(
     // Ações de arquivo no topo do cartão: preservam seus rótulos e
     // oferecem rolagem horizontal quando a largura do cartão é reduzida.
     val npcIoScope = rememberCoroutineScope()
+    val autorizarEscritaPublica = com.example.ui.components.rememberLegacyDocumentWriteGate {
+        android.widget.Toast.makeText(
+            context, "Permita acesso ao armazenamento para exportar no Android 8/9.",
+            android.widget.Toast.LENGTH_LONG
+        ).show()
+    }
     var operacaoNpcEmAndamento by remember { mutableStateOf(false) }
 
     val compactActions = compactPhone
@@ -1342,12 +1348,14 @@ fun NpcEncontroCard(
             label = "Exportar",
             onClick = {
                 if (operacaoNpcEmAndamento) return@InkButton
+                autorizarEscritaPublica {
                 operacaoNpcEmAndamento = true
                 npcIoScope.launch {
                     val arquivo = com.example.ui.tabs.EncounterCombatEquations.gerarPdfNpc(context, npc)
                     operacaoNpcEmAndamento = false
                     val mensagem = if (arquivo != null) "PDF salvo na pasta pública Documentos/NPC's: ${arquivo.name}" else "Falha ao gerar o PDF"
                     android.widget.Toast.makeText(context, mensagem, android.widget.Toast.LENGTH_LONG).show()
+                }
                 }
             },
             size = InkButtonSize.Small,
@@ -1361,6 +1369,7 @@ fun NpcEncontroCard(
             label = "Salvar",
             onClick = {
                 if (operacaoNpcEmAndamento) return@InkButton
+                autorizarEscritaPublica {
                 operacaoNpcEmAndamento = true
                 npcIoScope.launch {
                     try {
@@ -1372,6 +1381,7 @@ fun NpcEncontroCard(
                     } finally {
                         operacaoNpcEmAndamento = false
                     }
+                }
                 }
             },
             size = InkButtonSize.Small,

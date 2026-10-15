@@ -28,6 +28,17 @@ class ExaltedDocumentFoldersContractTest {
         assertTrue(topBar.contains("importarArquivoJson.launch"))
     }
 
+    @Test fun `legacy export requests runtime permission only on user action`() {
+        val gate = File("src/main/java/com/example/ui/components/LegacyDocumentWriteGate.kt").readText()
+        val topBar = File("src/main/java/com/example/ui/SheetTopBar.kt").readText()
+        val card = File("src/main/java/com/example/ui/tabs/EncounterNpcCard.kt").readText()
+        assertTrue(gate.contains("ActivityResultContracts.RequestPermission()"))
+        assertTrue(gate.contains("Build.VERSION_CODES.Q"))
+        assertTrue(gate.contains("Manifest.permission.WRITE_EXTERNAL_STORAGE"))
+        assertTrue(topBar.contains("autorizarEscritaPublica"))
+        assertTrue(card.contains("autorizarEscritaPublica"))
+    }
+
     @Test fun `public documents use app label and separate player NPC folders`() {
         assertTrue(storage.contains("const val APP = \"Gerador Harmônico\""))
         assertTrue(storage.contains("const val PLAYER = \"Jogador\""))

@@ -68,6 +68,11 @@ internal fun SheetTopBar(
         }
     }
     val contextoArquivos = LocalContext.current
+    val autorizarEscritaPublica = com.example.ui.components.rememberLegacyDocumentWriteGate {
+        scope.launch {
+            snackbarHostState.showSnackbar("Para salvar em Documentos no Android 8/9, conceda a permissão de armazenamento.")
+        }
+    }
     val importarArquivoJson = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
             scope.launch {
@@ -142,13 +147,13 @@ internal fun SheetTopBar(
                             DropdownMenuItem(text = { AppText("Novo") }, onClick = { onShowOpcoesMenu(false); onShowNovoConfirmDialog(true) },
     modifier = Modifier.feedbackOnPress(enabled = true)
 )
-                            DropdownMenuItem(text = { AppText("Salvar (cópia pública em Documentos)") }, onClick = { onShowOpcoesMenu(false); viewModel.validateAndSaveSheet() },
+                            DropdownMenuItem(text = { AppText("Salvar") }, onClick = { onShowOpcoesMenu(false); autorizarEscritaPublica { viewModel.validateAndSaveSheet() } },
     modifier = Modifier.feedbackOnPress(enabled = true)
 )
                             DropdownMenuItem(text = { AppText("Carregar") }, onClick = { onShowOpcoesMenu(false); onShowCarregarMenu(true) },
     modifier = Modifier.feedbackOnPress(enabled = true)
 )
-                            DropdownMenuItem(text = { AppText("Exportar (código público em Documentos)") }, onClick = { onShowOpcoesMenu(false); scope.launch { val resultado = withContext(Dispatchers.Default) { viewModel.exportarComoCodigo() }; resultado.fold({ codigo -> onShowCodeExportResultDialog(codigo) }, { erro -> snackbarHostState.showSnackbar(erro.message ?: "Não foi possível gerar o código.") }) } },
+                            DropdownMenuItem(text = { AppText("Exportar") }, onClick = { onShowOpcoesMenu(false); autorizarEscritaPublica { scope.launch { val resultado = withContext(Dispatchers.Default) { viewModel.exportarComoCodigo() }; resultado.fold({ codigo -> onShowCodeExportResultDialog(codigo) }, { erro -> snackbarHostState.showSnackbar(erro.message ?: "Não foi possível gerar o código.") }) } } },
     modifier = Modifier.feedbackOnPress(enabled = true)
 )
                             DropdownMenuItem(text = { AppText("Reverter Conclusão…") }, enabled = sheet.planilhaConcluida, onClick = { onShowOpcoesMenu(false); viewModel.solicitarDesmarcarPlanilhaConcluida() },
@@ -157,6 +162,12 @@ internal fun SheetTopBar(
                             DropdownMenuItem(text = { AppText("Restaurar Backup…") }, onClick = { onShowOpcoesMenu(false); onShowBackupListDialog(true) },
     modifier = Modifier.feedbackOnPress(enabled = true)
 )
+                            AppText(
+                                "Atenção: cópias exportadas para Documentos são públicas e podem ser acessadas fora do aplicativo.",
+                                color = visual.muted,
+                                style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier.widthIn(max = 280.dp).padding(12.dp)
+                            )
                         }
                     }
                 }
