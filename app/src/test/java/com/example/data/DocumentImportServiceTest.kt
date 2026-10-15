@@ -22,4 +22,18 @@ class DocumentImportServiceTest {
         val bytes = ByteArray(DocumentImportService.MAX_DOCUMENT_BYTES + 1)
         DocumentImportService.readBounded(ByteArrayInputStream(bytes))
     }
+    @Test(expected = java.nio.charset.CharacterCodingException::class)
+    fun rejeitaConteudoUtf8Invalido() {
+        DocumentImportService.readBounded(ByteArrayInputStream(byteArrayOf(0xC3.toByte(), 0x28)))
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun rejeitaFluxoSemProgresso() {
+        val broken = object : java.io.InputStream() {
+            override fun read(): Int = 0
+            override fun read(b: ByteArray, off: Int, len: Int): Int = 0
+        }
+        DocumentImportService.readBounded(broken)
+    }
 }
+

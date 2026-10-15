@@ -79,6 +79,23 @@ class FileManagementActions(
                 root.optJSONObject("attributes") != null &&
                 root.optJSONObject("abilities") != null
         ) { "Arquivo não é uma planilha válida do aplicativo." }
+        // Arquivo externo: limitar cardinalidade ANTES de materializar listas
+        // para evitar alocação de centenas de milhares de objetos no celular.
+        val listLimits = mapOf(
+            "charms" to 512, "merits" to 256, "specializations" to 256,
+            "weapons" to 128, "armaduras" to 128, "martialArts" to 128,
+            "healthBoxes" to 256, "intimacies" to 256, "battleGroups" to 64,
+            "historicoExperiencia" to 512, "linguasAdicionais" to 128
+        )
+        for ((field, max) in listLimits) {
+            require((root.optJSONArray(field)?.length() ?: 0) <= max) {
+                "O campo '$field' excede o limite permitido."
+            }
+        }
+        require(root.getJSONObject("attributes").length() <= 64 &&
+                root.getJSONObject("abilities").length() <= 128) {
+            "Quantidade excessiva de atributos/habilidades."
+        }
         val importada = com.example.data.CharacterSheetJsonCodec.decode(json)
         require(CharacterType.isSupported(importada.tipoPersonagem)) { "Tipo de Exaltado inválido." }
         aplicarPlanilhaImportada(importada.copy(

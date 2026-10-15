@@ -142,13 +142,13 @@ internal fun SheetTopBar(
                             DropdownMenuItem(text = { AppText("Novo") }, onClick = { onShowOpcoesMenu(false); onShowNovoConfirmDialog(true) },
     modifier = Modifier.feedbackOnPress(enabled = true)
 )
-                            DropdownMenuItem(text = { AppText("Salvar") }, onClick = { onShowOpcoesMenu(false); viewModel.validateAndSaveSheet() },
+                            DropdownMenuItem(text = { AppText("Salvar (cópia pública em Documentos)") }, onClick = { onShowOpcoesMenu(false); viewModel.validateAndSaveSheet() },
     modifier = Modifier.feedbackOnPress(enabled = true)
 )
                             DropdownMenuItem(text = { AppText("Carregar") }, onClick = { onShowOpcoesMenu(false); onShowCarregarMenu(true) },
     modifier = Modifier.feedbackOnPress(enabled = true)
 )
-                            DropdownMenuItem(text = { AppText("Exportar") }, onClick = { onShowOpcoesMenu(false); scope.launch { val resultado = withContext(Dispatchers.Default) { viewModel.exportarComoCodigo() }; resultado.fold({ codigo -> onShowCodeExportResultDialog(codigo) }, { erro -> snackbarHostState.showSnackbar(erro.message ?: "Não foi possível gerar o código.") }) } },
+                            DropdownMenuItem(text = { AppText("Exportar (código público em Documentos)") }, onClick = { onShowOpcoesMenu(false); scope.launch { val resultado = withContext(Dispatchers.Default) { viewModel.exportarComoCodigo() }; resultado.fold({ codigo -> onShowCodeExportResultDialog(codigo) }, { erro -> snackbarHostState.showSnackbar(erro.message ?: "Não foi possível gerar o código.") }) } },
     modifier = Modifier.feedbackOnPress(enabled = true)
 )
                             DropdownMenuItem(text = { AppText("Reverter Conclusão…") }, enabled = sheet.planilhaConcluida, onClick = { onShowOpcoesMenu(false); viewModel.solicitarDesmarcarPlanilhaConcluida() },
