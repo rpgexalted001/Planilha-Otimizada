@@ -178,7 +178,7 @@ dependencies {
 // Mantém o artefato do CI com o nome da versão, sem depender de renomeação manual.
 // O renomeador é uma task tipada e usa apenas Providers/Properties de Gradle;
 // isso evita capturar Project/Layout em uma ação do tipo doLast, que quebra a
-// serialização do configuration cache do Gradle 9.8.0.
+// serialização do configuration cache do Gradle 9.8.1.
 val renameDebugApk = tasks.register<RenameDebugApkTask>("renameDebugApk") {
     // Gradle 9 valida @InputFile antes de executar a task. A dependência explícita
     // garante que o produtor do app-debug.apk termine antes do consumidor.
@@ -214,7 +214,7 @@ tasks.withType<Test>().configureEach {
 }
 
 // Auditorias completas permanecem fora da suíte normal por padrão.
-// Não criamos uma segunda task Test espelhando testDebugUnitTest: no Gradle 9.8/AGP 9
+// Não criamos uma segunda task Test espelhando testDebugUnitTest: no Gradle 9.8.1/AGP 9
 // configurar um TaskProvider a partir do callback configureEach viola o MutationGuard.
 // Quando necessária, a auditoria pode ser executada explicitamente removendo o filtro
 // ou por um job de CI dedicado, sem alterar a criação da task Android.
