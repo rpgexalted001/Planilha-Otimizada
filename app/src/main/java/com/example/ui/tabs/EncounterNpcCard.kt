@@ -963,13 +963,17 @@ fun NpcEncontroCard(
                 color = visualTemplate.accentBright
             )
             Spacer(modifier = Modifier.height(14.dp))
-            // Seleção estritamente visual, isolada por NPC e lista de Encantos:
-            // não compra, remove, ativa nem modifica os pré-requisitos.
-            var encantoSelecionado by remember(npc.id, npc.charms) {
-                mutableStateOf<Pair<String, Int>?>(null)
-            }
+            // Uma única gaveta selecionada por NPC. A expansão continua independente:
+            // outras gavetas podem permanecer abertas, mas sem borda de seleção.
+            var gavetaSelecionada by remember(npc.id) { mutableStateOf<String?>(null) }
+            // Mistura sutil da cor de cada Tipo de Exaltado com a superfície escura.
+            // O fundo contrastante aparece SOMENTE durante a expansão da gaveta.
+            val fundoGavetaAberta = androidx.compose.ui.graphics.lerp(
+                visualTemplate.surfaceVariant, visualTemplate.accent, 0.24f
+            )
             encantosPorHabilidade.forEach { (habilidade, encantosDaGaveta) ->
                 val expandida = habilidade in gavetasExpandidas
+                val selecionada = expandida && gavetaSelecionada == habilidade
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
@@ -978,16 +982,43 @@ fun NpcEncontroCard(
                         .clip(RoundedCornerShape(8.dp))
                         .background(
                             androidx.compose.ui.graphics.Brush.horizontalGradient(
-                                listOf(visualTemplate.metalDeep, visualTemplate.surfaceVariant, visualTemplate.surface)
+                                if (expandida) {
+                                    listOf(fundoGavetaAberta, visualTemplate.surfaceVariant, fundoGavetaAberta)
+                                } else {
+                                    listOf(visualTemplate.metalDeep, visualTemplate.surfaceVariant, visualTemplate.surface)
+                                }
                             )
                         )
-                        // Borda sólida reforça a leitura do título em telas pequenas.
-                        .border(2.dp, visualTemplate.accentBright, RoundedCornerShape(8.dp))
+                        // Borda acentuada só na gaveta selecionada; as demais não
+                        // herdam marcação nem dependem exclusivamente da cor.
+                        .border(
+                            if (selecionada) 3.dp else 1.5.dp,
+                            if (selecionada) visualTemplate.accentBright else visualTemplate.outline,
+                            RoundedCornerShape(8.dp)
+                        )
                         .feedbackClickable {
-                            gavetasExpandidas = if (expandida) gavetasExpandidas - habilidade else gavetasExpandidas + habilidade
+                            if (expandida) {
+                                gavetasExpandidas = gavetasExpandidas - habilidade
+                                if (gavetaSelecionada == habilidade) gavetaSelecionada = null
+                            } else {
+                                gavetasExpandidas = gavetasExpandidas + habilidade
+                                gavetaSelecionada = habilidade
+                            }
                         }
+                        .semantics { selected = selecionada }
                         .padding(horizontal = 14.dp, vertical = 12.dp)
                 ) {
+                    if (selecionada) {
+                        // Filete lateral visível: seleção não depende só do fundo.
+                        Box(
+                            modifier = Modifier
+                                .width(4.dp)
+                                .height(26.dp)
+                                .clip(RoundedCornerShape(3.dp))
+                                .background(visualTemplate.accentBright)
+                        )
+                        Spacer(modifier = Modifier.width(9.dp))
+                    }
                     AppText(
                         if (expandida) "▾" else "▸",
                         color = visualTemplate.accentBright,
@@ -1014,8 +1045,6 @@ fun NpcEncontroCard(
                         val c = grupo.charm
                         var mostrarDetalhes by androidx.compose.runtime.remember(npc.id, c.nome) { androidx.compose.runtime.mutableStateOf(false) }
                         val nomeExibicao = "${indice + 1}. ${formatGroupedEncounterCharmName(grupo)}"
-                        val chaveDaCaixa = habilidade to indice
-                        val selecionado = encantoSelecionado == chaveDaCaixa
                         AppText(
                             nomeExibicao,
                             style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp, lineHeight = 20.sp),
@@ -1026,27 +1055,18 @@ fun NpcEncontroCard(
                                 // Margens externas impedem que duas caixas se encostem.
                                 .padding(start = 18.dp, end = 8.dp, top = 5.dp, bottom = 5.dp)
                                 .clip(RoundedCornerShape(8.dp))
-                                .background(
-                                    if (selecionado) visualTemplate.accentBright.copy(alpha = 0.25f)
-                                    else visualTemplate.surfaceVariant
-                                )
+                                // Os Encantos internos permanecem neutros: o estado
+                                // selecionado pertence exclusivamente ao cabeçalho.
+                                .background(visualTemplate.surfaceVariant)
                                 .border(
-                                    if (selecionado) 2.dp else 1.dp,
-                                    if (selecionado) visualTemplate.accentBright
-                                    else visualTemplate.outline.copy(alpha = 0.42f),
+                                    1.dp,
+                                    visualTemplate.outline.copy(alpha = 0.42f),
                                     RoundedCornerShape(8.dp)
                                 )
-                                .feedbackCombinedClickable(
-                                    onClick = {
-                                        encantoSelecionado = if (selecionado) null else chaveDaCaixa
-                                    },
-                                    onLongClick = {
-                                        encantoSelecionado = chaveDaCaixa
-                                        mostrarDetalhes = true
-                                    }
-                                )
-                                // Leitores de tela também identificam a seleção.
-                                .semantics { selected = selecionado }
+                                .pointerInput(npc.id, c.nome) {
+                                    detectTapGestures(onLongPress = { mostrarDetalhes = true })
+                                }
+                                .feedbackOnPress()
                                 .padding(horizontal = 12.dp, vertical = 10.dp),
                             forceStroke = false
                         )
