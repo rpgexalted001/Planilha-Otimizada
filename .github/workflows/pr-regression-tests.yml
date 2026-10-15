@@ -55,6 +55,7 @@ jobs:
             DragonBloodedSignaturePolicyTest
             NpcExternalImportValidatorTest
             EncounterNpcStoreRecoveryTest
+            EncounterNpcCharmSpacingContractTest
             DocumentImportServiceTest
             GenericShareCodecHardeningTest
             SheetPersistenceCoordinatorTest

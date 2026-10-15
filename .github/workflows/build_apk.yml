@@ -179,6 +179,7 @@ jobs:
             SheetIndexStoreRecoveryTest
             NpcExternalImportValidatorTest
             EncounterNpcStoreRecoveryTest
+            EncounterNpcCharmSpacingContractTest
             AndroidSecurityBaselineTest
             GradleWrapperVersionContractTest
             EncounterGenerationDiagnosticsTest
