@@ -1,0 +1,450 @@
+package com.example.ui
+
+import com.example.model.isDragonBlooded
+import com.example.model.isLunar
+
+import androidx.compose.runtime.setValue
+
+import androidx.compose.runtime.getValue
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
+import com.example.ui.components.AppText
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import com.example.ui.components.ConfirmDeleteDialog
+import com.example.ui.components.LongPressCard
+import com.example.ui.theme.ExaltedOnSurface
+import com.example.ui.theme.LocalExaltedVisualTemplate
+import com.example.viewmodel.SheetViewModel
+import kotlinx.coroutines.launch
+
+
+@Composable
+fun DeleteSheetDialog(sheetToDelete: com.example.model.CharacterSheet?, onDismiss: () -> Unit, viewModel: SheetViewModel, modifier: Modifier = Modifier) {
+    val visual = LocalExaltedVisualTemplate.current
+    sheetToDelete?.let { s ->
+        ConfirmDeleteDialog(
+            itemTitle = s.nome,
+            onConfirm = {
+                viewModel.deleteSheet(s.id)
+                onDismiss()
+            },
+            onDismiss = onDismiss,
+            modifier = modifier
+        )
+    }
+}
+
+
+@Composable
+fun SheetsListDialog(
+    show: Boolean,
+    onDismiss: () -> Unit,
+    viewModel: SheetViewModel,
+    buscaPlanilhasSalvas: String,
+    onBuscaChange: (String) -> Unit,
+    onDeleteRequest: (com.example.model.CharacterSheet) -> Unit,
+    onNovaPlanilha: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val visual = LocalExaltedVisualTemplate.current
+    if (!show) return
+    val sheet by viewModel.sheetState.collectAsState()
+    val savedSheets by viewModel.savedSheets.collectAsState()
+    val savedListHeightLimit = (LocalConfiguration.current.screenHeightDp * 0.45f).coerceAtMost(480f).dp
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        modifier = modifier.then(com.example.ui.components.gildedDialogBorder()),
+        shape = com.example.ui.components.dialogShape,
+        title = {
+            AppText(
+                forceStroke = true,
+                text = "Planilhas de Personagem Salvas",
+                color = visual.accentBright,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+        },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = savedListHeightLimit)
+                    .verticalScroll(rememberScrollState()),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                AppText(
+                    text = "Selecione uma planilha para carregar ou mantenha pressionado para excluir:",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = visual.muted,
+                    textAlign = TextAlign.Center
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+
+                if (savedSheets.size > 4 || buscaPlanilhasSalvas.isNotBlank()) {
+                    OutlinedTextField(
+                        value = buscaPlanilhasSalvas,
+                        onValueChange = onBuscaChange,
+                        label = { AppText("Buscar por nome") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        trailingIcon = if (buscaPlanilhasSalvas.isNotEmpty()) {
+                            {
+                                androidx.compose.material3.IconButton(
+                                    onClick = { onBuscaChange("") },
+                                    modifier = Modifier.semantics { contentDescription = "Limpar busca" }
+                                ) {
+                                    AppText(text = "×", color = visual.onSurface)
+                                }
+                            }
+                        } else null
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+
+                val termoBusca = buscaPlanilhasSalvas.trim()
+                val planilhasFiltradas = if (termoBusca.isEmpty()) {
+                    savedSheets
+                } else {
+                    savedSheets.filter {
+                        it.nome.contains(termoBusca, ignoreCase = true) ||
+                            it.nomeArquivo().contains(termoBusca, ignoreCase = true)
+                    }
+                }
+                if (savedSheets.isEmpty()) {
+                    AppText(
+                        text = "Nenhuma planilha salva.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = visual.muted,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(vertical = 12.dp)
+                    )
+                } else if (planilhasFiltradas.isEmpty() && termoBusca.isNotEmpty()) {
+                    AppText(
+                        text = "Nenhuma planilha encontrada para \"$termoBusca\".",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = visual.muted,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(vertical = 12.dp)
+                    )
+                }
+
+                planilhasFiltradas.forEach { s ->
+                    val isCurrent = s.id == sheet.id
+                    LongPressCard(
+                        onLongClick = {
+                            if (savedSheets.size > 1) {
+                                onDeleteRequest(s)
+                            }
+                        },
+                        onClick = {
+                            viewModel.loadSheet(s)
+                            onDismiss()
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                AppText(
+                                    text = s.nomeArquivo(),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isCurrent) visual.accentBright else visual.onSurface,
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                AppText(
+                                    text = when {
+                                        s.tipoPersonagem.isDragonBlooded() -> "Aspecto: ${s.aspecto.ifBlank { "-" }} | Jogador: ${s.jogador.ifBlank { "-" }}"
+                                        s.tipoPersonagem.isLunar() -> "Casta: ${s.lunarCasta.displayName} | Jogador: ${s.jogador.ifBlank { "-" }}"
+                                        else -> "Casta: ${s.casta.displayName} | Jogador: ${s.jogador.ifBlank { "-" }}"
+                                    },
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = visual.muted,
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                            if (isCurrent) {
+                                Surface(
+                                    color = visual.accentBright.copy(alpha = 0.2f),
+                                    shape = RoundedCornerShape(4.dp)
+                                ) {
+                                    AppText(
+                                        text = "Ativa",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = visual.accentBright,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        dismissButton = {
+            com.example.ui.components.GildedDialogButton(
+                text = "Nova Planilha",
+                onClick = {
+                    onDismiss()
+                    onNovaPlanilha()
+                }
+            )
+        },
+        confirmButton = {
+            com.example.ui.components.GildedDialogTextButton(text = "Fechar", onClick = onDismiss)
+        },
+        containerColor = visual.surface,
+        titleContentColor = visual.onSurface,
+        textContentColor = visual.onSurface,
+    )
+}
+
+
+@Composable
+fun BackupListDialog(
+    show: Boolean,
+    onDismiss: () -> Unit,
+    viewModel: SheetViewModel,
+    scope: kotlinx.coroutines.CoroutineScope,
+    snackbarHostState: androidx.compose.material3.SnackbarHostState,
+    modifier: Modifier = Modifier
+) {
+    val visual = LocalExaltedVisualTemplate.current
+    if (!show) return
+    val backups = remember(show, viewModel) { viewModel.listarBackupsPeriodicos() }
+    val backupListHeightLimit = (LocalConfiguration.current.screenHeightDp * 0.45f).coerceAtMost(480f).dp
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        modifier = modifier.then(com.example.ui.components.gildedDialogBorder()),
+        shape = com.example.ui.components.dialogShape,
+        title = { AppText("Restaurar Backup", color = visual.accentBright, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(), maxLines = 2, overflow = TextOverflow.Ellipsis, forceStroke = true) },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth().heightIn(max = backupListHeightLimit).verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                AppText(
+                    text = "Cópias automáticas salvas a cada 5 minutos, independentes do salvamento manual. Restaurar substitui a planilha atual na tela — a planilha em si só é sobrescrita de vez se você apertar Salvar depois.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = visual.muted
+                )
+                if (backups.isEmpty()) {
+                    AppText(
+                        text = "Nenhum backup automático ainda. Eles aparecem aqui depois de alguns minutos de uso.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = visual.muted,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(vertical = 12.dp)
+                    )
+                }
+                backups.forEach { snapshot ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        AppText(
+                            text = snapshot.timestamp,
+                            color = visual.onSurface,
+                            modifier = Modifier.weight(1f),
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Spacer(modifier = Modifier.size(8.dp))
+                        com.example.ui.components.GildedDialogTextButton(
+                            text = "Restaurar",
+                            onClick = {
+                                val sucesso = viewModel.restaurarBackupPeriodico(snapshot)
+                                onDismiss()
+                                scope.launch {
+                                    snackbarHostState.showSnackbar(
+                                        if (sucesso) "Backup de ${snapshot.timestamp} restaurado." else "Não foi possível restaurar esse backup."
+                                    )
+                                }
+                            }
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            com.example.ui.components.GildedDialogButton(text = "Fechar", onClick = onDismiss)
+        },
+        containerColor = visual.surface,
+        titleContentColor = visual.onSurface,
+        textContentColor = visual.onSurface,
+    )
+}
+
+// Ao clicar em "Novo", pergunta se o usuário quer salvar a planilha atual
+// antes de apagar tudo da tela — evita perda acidental de dados não
+// salvos (mesmo cuidado já aplicado em "Restaurar Backup"/"Carregar").
+
+@Composable
+fun NovoConfirmDialog(show: Boolean, onDismiss: () -> Unit, onProceed: (salvarAntes: Boolean) -> Unit, modifier: Modifier = Modifier) {
+    val visual = LocalExaltedVisualTemplate.current
+    if (!show) return
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        modifier = modifier.then(com.example.ui.components.gildedDialogBorder()),
+        shape = com.example.ui.components.dialogShape,
+        title = {
+            AppText(
+                forceStroke = true,
+                text = "Criar Nova Planilha",
+                color = visual.accentBright,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+        },
+        text = {
+            AppText(
+                text = "Deseja salvar a planilha atual antes de criar uma nova? Alterações não salvas serão perdidas.",
+                color = visual.onSurface,
+                modifier = Modifier.fillMaxWidth()
+            )
+        },
+        confirmButton = {
+            // Empilhados na vertical: 3 botões lado a lado (216dp cada,
+            // tamanho mínimo de InkButtonSize.Small) não cabem na largura
+            // do AlertDialog na maioria das telas — "Cancelar" ficava
+            // cortado. Empilhar garante que os 3 fiquem sempre visíveis,
+            // independente da largura da tela.
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                com.example.ui.components.GildedDialogButton(
+                    text = "Salvar",
+                    onClick = { onProceed(true) },
+                    modifier = Modifier.fillMaxWidth(),
+                    fillMaxWidth = true
+                )
+                com.example.ui.components.GildedDialogTextButton(
+                    text = "Não Salvar",
+                    onClick = { onProceed(false) },
+                    modifier = Modifier.fillMaxWidth(),
+                    fillMaxWidth = true
+                )
+                com.example.ui.components.GildedDialogTextButton(
+                    text = "Cancelar",
+                    onClick = onDismiss,
+                    modifier = Modifier.fillMaxWidth(),
+                    fillMaxWidth = true
+                )
+            }
+        },
+        containerColor = visual.surface,
+        titleContentColor = visual.onSurface,
+        textContentColor = visual.onSurface,
+    )
+}
+
+// Segunda etapa do fluxo de "Novo" — pedido explícito do usuário: a planilha
+// nova deve perguntar Solar ou Sangue de Dragão antes de ser criada, com
+// a interface (cor, Aspecto x Casta, etc.) mudando de acordo. Diálogo
+// separado do de confirmação acima (que só decide se salva a planilha atual
+// antes) — cada um cuida de uma decisão.
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun EscolhaTemplateNovaPlanilhaDialog(show: Boolean, onDismiss: () -> Unit, onEscolhido: (tipoPersonagem: String) -> Unit, modifier: Modifier = Modifier) {
+    val visual = LocalExaltedVisualTemplate.current
+    if (!show) return
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        modifier = modifier.then(com.example.ui.components.gildedDialogBorder()),
+        shape = com.example.ui.components.dialogShape,
+        title = {
+            AppText(
+                forceStroke = true,
+                text = "Nova Planilha",
+                color = visual.accentBright,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+        },
+        text = {
+            AppText(
+                text = "Qual o tipo de Exaltado da nova planilha?",
+                color = visual.onSurface,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+        },
+        confirmButton = {
+            Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                // Duas opções por linha e a terceira centralizada, sem
+                // BoxWithConstraints dentro do AlertDialog (medidas intrínsecas).
+                // Os rótulos e as ações permanecem iguais para os três tipos.
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    maxItemsInEachRow = 2,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    listOf(
+                        "Solar" to "Solar",
+                        "Sangue de Dragão" to "SangueDeDragao",
+                        "Lunar" to "Lunar"
+                    ).forEach { (rotulo, valor) ->
+                        com.example.ui.components.GildedDialogButton(
+                            text = rotulo,
+                            onClick = { onEscolhido(valor) },
+                            modifier = Modifier.widthIn(min = 96.dp, max = 120.dp),
+                            fillMaxWidth = true
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    com.example.ui.components.GildedDialogTextButton(text = "Cancelar", onClick = onDismiss, modifier = Modifier.align(Alignment.CenterEnd))
+                }
+            }
+        },
+        containerColor = visual.surface,
+        titleContentColor = visual.onSurface,
+        textContentColor = visual.onSurface,
+    )
+}
