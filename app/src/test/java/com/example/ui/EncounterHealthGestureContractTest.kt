@@ -40,6 +40,20 @@ class EncounterHealthGestureContractTest {
     }
 
     @Test
+    fun `health track keeps clear button right aligned and rows separated`() {
+        val health = source.substringAfter("val ordemPenalidadesNpc = NPC_HEALTH_PENALTY_ORDER")
+            .substringBefore("Spacer(modifier = Modifier.height(18.dp))")
+        assertTrue(health.contains("verticalArrangement = Arrangement.spacedBy(14.dp)"))
+        assertTrue(health.contains("Column(verticalArrangement = Arrangement.spacedBy(10.dp))"))
+        val clear = health.substringAfter("// Sempre encostada à DIREITA da trilha")
+        assertTrue(clear.contains("modifier = Modifier.fillMaxWidth().padding(top = 8.dp)"))
+        assertTrue(clear.contains("horizontalArrangement = Arrangement.End"))
+        assertTrue(clear.indexOf("horizontalArrangement = Arrangement.End") < clear.indexOf("label = \"Limpar\""))
+        assertTrue(clear.contains("enabled = npc.healthBoxes.any { it.tipoDano != 0 }"))
+        assertTrue(clear.contains("onClick = onLimparDano"))
+    }
+
+    @Test
     fun `health clear action does not steal width from damage rows`() {
         val health = source.substringAfter("val ordemPenalidadesNpc = NPC_HEALTH_PENALTY_ORDER")
             .substringBefore("Spacer(modifier = Modifier.height(18.dp))")

@@ -860,7 +860,8 @@ fun NpcEncontroCard(
                 grupos
             }
             val ordemPenalidadesNpc = NPC_HEALTH_PENALTY_ORDER
-            Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            // Distância maior entre as linhas de penalidades da trilha.
+            Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 // Usa o índice da própria iteração: sem busca repetida
                 // na lista de penalidades a cada recomposição do cartão.
                 ordemPenalidadesNpc.forEachIndexed { grupoIndex, penalidadeRotulo ->
@@ -873,7 +874,8 @@ fun NpcEncontroCard(
                                 val gap = 6.dp
                                 val availableForBoxes = (maxWidth - labelWidth).value.coerceAtLeast(boxSize.value)
                                 val maxPerRow = ((availableForBoxes + gap.value) / (boxSize.value + gap.value)).toInt().coerceAtLeast(1)
-                                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                // Se o grupo quebrar em várias linhas, manter o respiro.
+                                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                                     caixasDoGrupo.chunked(maxPerRow).forEachIndexed { rowIndex, rowBoxes ->
                                         Row(verticalAlignment = Alignment.CenterVertically) {
                                             if (rowIndex == 0) {
@@ -915,11 +917,17 @@ fun NpcEncontroCard(
                 }
                 // A ação não compete com a largura das caixas de vitalidade.
                 // Mantém-se disponível mesmo quando não há caixas no grupo "Inc".
-                InkButton(
-                    visualTemplate = visualTemplate, label = "Limpar", onClick = onLimparDano,
-                    enabled = npc.healthBoxes.any { it.tipoDano != 0 }, size = InkButtonSize.Small,
-                    variant = InkButtonVariant.Secondary, brushIndex = 0
-                )
+                // Sempre encostada à DIREITA da trilha, com folga da última linha.
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    InkButton(
+                        visualTemplate = visualTemplate, label = "Limpar", onClick = onLimparDano,
+                        enabled = npc.healthBoxes.any { it.tipoDano != 0 }, size = InkButtonSize.Small,
+                        variant = InkButtonVariant.Secondary, brushIndex = 0
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(18.dp))
