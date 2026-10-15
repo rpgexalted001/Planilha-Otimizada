@@ -88,7 +88,7 @@ object NpcSaveLoadService {
     suspend fun carregarDocumento(context: Context, uri: android.net.Uri): NpcEncontro = withContext(Dispatchers.IO) {
         try {
             val json = DocumentImportService.read(context, uri)
-            NpcEncontroJsonCodec.decode(json).copy(id = UUID.randomUUID().toString())
+            NpcExternalImportValidator.decodeValidated(json).copy(id = UUID.randomUUID().toString())
         } catch (e: NpcSaveCorruptedException) {
             throw e
         } catch (e: Exception) {
