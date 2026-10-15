@@ -29,7 +29,9 @@ class EncounterVisualVisibilityContractTest {
         // mantendo o título legível nas três paletas.
         assertTrue(drawer.contains("val selecionada = expandida && gavetaSelecionada == habilidade"))
         assertTrue(drawer.contains("if (selecionada) 3.dp else 1.5.dp"))
-        assertTrue(drawer.contains("if (selecionada) visualTemplate.accentBright else visualTemplate.outline"))
+        assertTrue(drawer.contains("if (selecionada) textoGavetaSelecionada else visualTemplate.outline"))
+        assertTrue(drawer.contains("selecionada -> listOf(fundoGavetaSelecionada, fundoGavetaSelecionada)"))
+        assertTrue(drawer.contains("color = if (selecionada) textoGavetaSelecionada else visualTemplate.accentBright"))
         assertTrue(drawer.contains(".semantics { selected = selecionada }"))
         assertTrue(drawer.contains("color = visualTemplate.accentBright"))
         assertTrue(drawer.contains("gavetasExpandidas = gavetasExpandidas + habilidade"))

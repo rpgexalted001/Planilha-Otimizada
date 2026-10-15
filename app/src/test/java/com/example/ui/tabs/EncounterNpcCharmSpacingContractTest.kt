@@ -29,28 +29,33 @@ class EncounterNpcCharmSpacingContractTest {
         assertTrue(drawer.contains("if (gavetaSelecionada == habilidade) gavetaSelecionada = null"))
         assertTrue(drawer.contains(".semantics { selected = selecionada }"))
         assertTrue(drawer.contains("if (selecionada) 3.dp else 1.5.dp"))
-        assertTrue(drawer.contains("if (selecionada) visualTemplate.accentBright else visualTemplate.outline"))
-        assertTrue(drawer.contains(".width(4.dp)"))
+        assertTrue(drawer.contains("if (selecionada) textoGavetaSelecionada else visualTemplate.outline"))
+        assertTrue(drawer.contains("val textoGavetaSelecionada = com.example.ui.theme.corTextoContraste(fundoGavetaSelecionada)"))
+        assertTrue(!drawer.contains(".width(4.dp)"))
     }
 
     @Test
     fun `fundo tematico contrastante aparece apenas com a gaveta aberta`() {
         assertTrue(drawer.contains("visualTemplate.surfaceVariant, visualTemplate.accent, 0.24f"))
-        assertTrue(drawer.contains("if (expandida) {"))
-        assertTrue(drawer.contains("listOf(fundoGavetaAberta, visualTemplate.surfaceVariant, fundoGavetaAberta)"))
-        assertTrue(drawer.contains("listOf(visualTemplate.metalDeep, visualTemplate.surfaceVariant, visualTemplate.surface)"))
-        assertTrue(drawer.contains("color = visualTemplate.accentBright"))
+        assertTrue(drawer.contains("visualTemplate.surfaceVariant, visualTemplate.accent, 0.88f"))
+        assertTrue(drawer.contains("selecionada -> listOf(fundoGavetaSelecionada, fundoGavetaSelecionada)"))
+        assertTrue(drawer.contains("expandida -> listOf(fundoGavetaAberta, visualTemplate.surfaceVariant, fundoGavetaAberta)"))
+        assertTrue(drawer.contains("else -> listOf(visualTemplate.metalDeep, visualTemplate.surfaceVariant, visualTemplate.surface)"))
+        assertTrue(drawer.contains("color = if (selecionada) textoGavetaSelecionada else visualTemplate.accentBright"))
         assertTrue(drawer.contains("fontSize = 17.sp, lineHeight = 22.sp"))
     }
 
     @Test
-    fun `encantos mantem caixas neutras e detalhes somente no toque longo`() {
-        assertTrue(charms.contains(".background(visualTemplate.surfaceVariant)"))
-        assertTrue(charms.contains("visualTemplate.outline.copy(alpha = 0.42f)"))
-        assertTrue(charms.contains("detectTapGestures(onLongPress = { mostrarDetalhes = true })"))
-        assertTrue(!charms.contains("if (selecionado)"))
-        assertTrue(!charms.contains(".semantics { selected ="))
-        assertTrue(!section.contains("var encantoSelecionado"))
+    fun `encantos voltam a acender ao toque e mantem detalhes no toque longo`() {
+        assertTrue(section.contains("var encantoSelecionado by remember(npc.id, npc.charms)"))
+        assertTrue(charms.contains("val encantoMarcado = encantoSelecionado == chaveDaCaixa"))
+        assertTrue(charms.contains("if (encantoMarcado) visualTemplate.accentBright.copy(alpha = 0.25f)"))
+        assertTrue(charms.contains("if (encantoMarcado) 2.dp else 1.dp"))
+        assertTrue(charms.contains(".feedbackCombinedClickable("))
+        assertTrue(charms.contains("encantoSelecionado = if (encantoMarcado) null else chaveDaCaixa"))
+        assertTrue(charms.contains("onLongClick = {"))
+        assertTrue(charms.contains("mostrarDetalhes = true"))
+        assertTrue(charms.contains(".semantics { selected = encantoMarcado }"))
         assertTrue(section.contains("groupAccumulatedEncounterCharms(encantosDaGaveta).forEachIndexed"))
     }
 

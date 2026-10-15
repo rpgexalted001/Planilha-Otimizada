@@ -25,12 +25,14 @@ class EncounterHealthGestureContractTest {
     fun `encounter charm and spell details remain long press only`() {
         val charm = source.substringAfter("groupAccumulatedEncounterCharms(encantosDaGaveta)")
             .substringBefore("if (mostrarDetalhes)")
-        // A seleção é da gaveta, não do Encanto. O diálogo interno abre
-        // exclusivamente no toque prolongado.
-        assertTrue(charm.contains("detectTapGestures(onLongPress = { mostrarDetalhes = true })"))
-        assertTrue(!charm.contains(".feedbackCombinedClickable("))
-        assertTrue(!charm.contains("encantoSelecionado"))
-        assertTrue(!charm.contains(".semantics { selected ="))
+        // Toque curto acende/desmarca o Encanto; somente o toque longo
+        // abre os detalhes e não altera sua aquisição ou XP.
+        assertTrue(charm.contains(".feedbackCombinedClickable("))
+        assertTrue(charm.contains("encantoSelecionado = if (encantoMarcado) null else chaveDaCaixa"))
+        assertTrue(charm.contains("onLongClick = {"))
+        assertTrue(charm.contains("mostrarDetalhes = true"))
+        assertTrue(!charm.substringBefore("onLongClick = {").contains("mostrarDetalhes = true"))
+        assertTrue(charm.contains(".semantics { selected = encantoMarcado }"))
         val spell = source.substringAfter("npc.feiticos.forEach { feitico ->")
             .substringBefore("if (mostrarDetalhesFeitico)")
         assertTrue(spell.contains("detectTapGestures(onLongPress = { mostrarDetalhesFeitico = true })"))

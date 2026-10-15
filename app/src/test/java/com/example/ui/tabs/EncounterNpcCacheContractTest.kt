@@ -32,13 +32,15 @@ class EncounterNpcCacheContractTest {
         ))
         val charm = source.substringAfter("groupAccumulatedEncounterCharms(encantosDaGaveta)")
             .substringBefore("if (mostrarDetalhes)")
-        // Somente a gaveta é selecionável, isolada por NPC; os
-        // Encantos continuam com detalhes no toque prolongado.
+        // Gaveta e Encanto têm seleção independente, ambas isoladas por NPC.
         assertTrue(source.contains("var gavetaSelecionada by remember(npc.id)"))
+        assertTrue(source.contains("var encantoSelecionado by remember(npc.id, npc.charms)"))
         assertTrue(source.contains("val selecionada = expandida && gavetaSelecionada == habilidade"))
         assertTrue(source.contains(".semantics { selected = selecionada }"))
-        assertTrue(charm.contains("detectTapGestures(onLongPress = { mostrarDetalhes = true })"))
-        assertTrue(charm.contains(".pointerInput(npc.id, c.nome)"))
+        assertTrue(charm.contains(".feedbackCombinedClickable("))
+        assertTrue(charm.contains("onLongClick = {"))
+        assertTrue(charm.contains("mostrarDetalhes = true"))
+        assertTrue(charm.contains(".semantics { selected = encantoMarcado }"))
         assertTrue(source.contains(".pointerInput(npc.id, feitico.nome)"))
     }
 
