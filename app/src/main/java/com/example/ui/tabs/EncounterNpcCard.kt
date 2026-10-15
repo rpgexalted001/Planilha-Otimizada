@@ -953,6 +953,11 @@ fun NpcEncontroCard(
                 color = visualTemplate.accentBright
             )
             Spacer(modifier = Modifier.height(14.dp))
+            // Seleção estritamente visual, isolada por NPC e lista de Encantos:
+            // não compra, remove, ativa nem modifica os pré-requisitos.
+            var encantoSelecionado by remember(npc.id, npc.charms) {
+                mutableStateOf<Pair<String, Int>?>(null)
+            }
             encantosPorHabilidade.forEach { (habilidade, encantosDaGaveta) ->
                 val expandida = habilidade in gavetasExpandidas
                 Row(
@@ -989,6 +994,8 @@ fun NpcEncontroCard(
                     )
                 }
                 if (expandida) {
+                    // Margem entre o cabeçalho da gaveta e o primeiro Encanto.
+                    Spacer(modifier = Modifier.height(10.dp))
                     // Encantos legalmente repetíveis são consolidados visualmente
                     // em uma única linha. A quantidade representa quantas vezes
                     // o NPC adquiriu o mesmo Encanto nesta gaveta. Encantos que
@@ -997,18 +1004,38 @@ fun NpcEncontroCard(
                         val c = grupo.charm
                         var mostrarDetalhes by androidx.compose.runtime.remember(npc.id, c.nome) { androidx.compose.runtime.mutableStateOf(false) }
                         val nomeExibicao = "${indice + 1}. ${formatGroupedEncounterCharmName(grupo)}"
+                        val chaveDaCaixa = habilidade to indice
+                        val selecionado = encantoSelecionado == chaveDaCaixa
                         AppText(
                             nomeExibicao,
-                            style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
+                            style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp, lineHeight = 20.sp),
                             fontWeight = FontWeight.SemiBold,
-                            color = visualTemplate.onSurface,
+                            color = if (selecionado) visualTemplate.accentBright else visualTemplate.onSurface,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(start = 18.dp, bottom = 2.dp)
-                                .pointerInput(npc.id, c.nome) {
-                                    detectTapGestures(onLongPress = { mostrarDetalhes = true })
-                                }
-                                .feedbackOnPress(),
+                                // Margens externas impedem que duas caixas se encostem.
+                                .padding(start = 18.dp, end = 8.dp, top = 5.dp, bottom = 5.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(
+                                    if (selecionado) visualTemplate.accentBright.copy(alpha = 0.25f)
+                                    else visualTemplate.surfaceVariant
+                                )
+                                .border(
+                                    if (selecionado) 2.dp else 1.dp,
+                                    if (selecionado) visualTemplate.accentBright
+                                    else visualTemplate.outline.copy(alpha = 0.42f),
+                                    RoundedCornerShape(8.dp)
+                                )
+                                .feedbackCombinedClickable(
+                                    onClick = {
+                                        encantoSelecionado = if (selecionado) null else chaveDaCaixa
+                                    },
+                                    onLongClick = {
+                                        encantoSelecionado = chaveDaCaixa
+                                        mostrarDetalhes = true
+                                    }
+                                )
+                                .padding(horizontal = 12.dp, vertical = 10.dp),
                             forceStroke = false
                         )
                         if (mostrarDetalhes) {
@@ -1031,6 +1058,8 @@ fun NpcEncontroCard(
                             }
                         }
                     }
+                    // Margem abaixo do último Encanto antes da próxima gaveta.
+                    Spacer(modifier = Modifier.height(14.dp))
                 }
             }
 
@@ -1169,9 +1198,11 @@ fun NpcEncontroCard(
                 }
             }
 
-            // Botões de XP ficam na linha imediatamente abaixo da última
-            // gaveta de Encantos e alinhados à direita, sem competir com o
-            // título da seção.
+            // Três linhas de respiro entre Encantos/Feitiços e os controles de XP.
+            // O espaçamento é externo: nenhuma caixa encosta nos botões.
+            Spacer(modifier = Modifier.height(36.dp))
+            // Botões de XP permanecem alinhados horizontalmente e responsivos,
+            // com separação visual clara da última gaveta.
             androidx.compose.foundation.layout.BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
                 val xpActionsScrollable = maxWidth < 320.dp
                 Row(
