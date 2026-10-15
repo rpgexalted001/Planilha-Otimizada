@@ -120,52 +120,52 @@ object GenericShareCodec {
     // dicionário pré-carregado fornecido por quem chama.
     private fun comprimir(dados: ByteArray, dicionario: ByteArray): ByteArray {
         val deflater = Deflater(Deflater.BEST_COMPRESSION, true)
-        deflater.setDictionary(dicionario)
-        deflater.setInput(dados)
-        deflater.finish()
-        val buffer = ByteArray(4096)
-        val saida = ByteArrayOutputStream(dados.size)
-        while (!deflater.finished()) {
-            val n = deflater.deflate(buffer)
-            saida.write(buffer, 0, n)
+        try {
+            deflater.setDictionary(dicionario)
+            deflater.setInput(dados)
+            deflater.finish()
+            val buffer = ByteArray(4096)
+            val saida = ByteArrayOutputStream()
+            while (!deflater.finished()) {
+                val n = deflater.deflate(buffer)
+                if (n <= 0) throw IllegalArgumentException("Falha ao comprimir código.")
+                saida.write(buffer, 0, n)
+            }
+            return saida.toByteArray()
+        } finally {
+            deflater.end()
         }
-        deflater.end()
-        return saida.toByteArray()
     }
 
-    // Em modo bruto (nowrap=true) não existe o sinalizador automático
-    // "precisa de dicionário" que existe no formato zlib com cabeçalho —
-    // esse sinal vive dentro do próprio cabeçalho, que aqui não existe.
-    // Por isso o dicionário é aplicado de forma PROATIVA, antes de
-    // qualquer chamada a inflate(), em vez de esperar
-    // Inflater.needsDictionary() retornar true (validado por simulação em
-    // Python antes de implementar pela primeira vez — esse sinal nunca
-    // dispara em modo bruto).
+    // Exigir finished(): needsInput() sozinho NÃO significa fluxo íntegro.
+    // Um checksum CRC32 recalculado pelo remetente não autentica nem valida
+    // a estrutura DEFLATE; sem essa verificação aceita-se payload truncado.
     private fun descomprimir(dados: ByteArray, dicionario: ByteArray): ByteArray {
         val inflater = Inflater(true)
-        inflater.setDictionary(dicionario)
-        inflater.setInput(dados)
-        val buffer = ByteArray(4096)
-        val saida = ByteArrayOutputStream()
-        var totalDescomprimido = 0
-        while (!inflater.finished()) {
-            val n = inflater.inflate(buffer)
-            if (n == 0) {
-                // Evita loop infinito em streams DEFLATE malformados que não
-                // pedem mais entrada, mas também não chegam a finished().
-                if (inflater.needsInput() || inflater.needsDictionary()) break
-                inflater.end()
-                throw IllegalArgumentException("Fluxo comprimido inválido.")
+        try {
+            inflater.setDictionary(dicionario)
+            inflater.setInput(dados)
+            val buffer = ByteArray(4096)
+            val saida = ByteArrayOutputStream()
+            var totalDescomprimido = 0
+            while (!inflater.finished()) {
+                val n = inflater.inflate(buffer)
+                if (n <= 0) {
+                    throw IllegalArgumentException("Fluxo DEFLATE incompleto ou inválido.")
+                }
+                totalDescomprimido += n
+                if (totalDescomprimido > LIMITE_DESCOMPRESSAO_BYTES) {
+                    throw LimiteDescompressaoExcedidoException()
+                }
+                saida.write(buffer, 0, n)
             }
-            totalDescomprimido += n
-            if (totalDescomprimido > LIMITE_DESCOMPRESSAO_BYTES) {
-                inflater.end()
-                throw LimiteDescompressaoExcedidoException()
+            if (inflater.remaining != 0) {
+                throw IllegalArgumentException("Dados excedentes no código comprimido.")
             }
-            saida.write(buffer, 0, n)
+            return saida.toByteArray()
+        } finally {
+            inflater.end()
         }
-        inflater.end()
-        return saida.toByteArray()
     }
 
     // CRC32 — suficiente para detectar corrupção/truncamento acidental
