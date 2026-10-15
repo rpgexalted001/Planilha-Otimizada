@@ -13,6 +13,7 @@ class SheetIndexStore(private val prefs: SharedPreferences) {
         return try {
             CharacterSheetJsonCodec.decode(raw)
         } catch (e: Exception) {
+            quarantineCorruptCopy(KEY_ACTIVE_QUARANTINE, raw)
             onError(e)
             CharacterSheet()
         }
@@ -33,10 +34,12 @@ class SheetIndexStore(private val prefs: SharedPreferences) {
                 try {
                     result += CharacterSheetJsonCodec.decode(array.getString(index))
                 } catch (e: Exception) {
+                    quarantineCorruptCopy(KEY_INDEX_QUARANTINE, raw)
                     onItemError(e)
                 }
             }
         } catch (e: Exception) {
+            quarantineCorruptCopy(KEY_INDEX_QUARANTINE, raw)
             onIndexError(e)
         }
         if (result.isEmpty()) result += loadActive(onItemError)
@@ -66,7 +69,17 @@ class SheetIndexStore(private val prefs: SharedPreferences) {
         }
     }
 
+    /** Mantém o texto originalmente corrompido sem torná-lo público. */
+    private fun quarantineCorruptCopy(key: String, raw: String) {
+        if (!prefs.contains(key) && raw.length <= MAX_QUARANTINE_CHARS) {
+            prefs.edit().putString(key, raw).apply()
+        }
+    }
+
     private companion object {
+        const val MAX_QUARANTINE_CHARS = 4 * 1024 * 1024
+        const val KEY_ACTIVE_QUARANTINE = "exalted_character_sheet_quarantine"
+        const val KEY_INDEX_QUARANTINE = "exalted_sheet_index_quarantine"
         const val KEY_ACTIVE_SHEET = "exalted_character_sheet"
         const val KEY_SHEET_INDEX = "exalted_sheet_index"
     }
