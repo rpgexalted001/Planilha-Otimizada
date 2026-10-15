@@ -98,7 +98,7 @@ jobs:
 
       - name: Set up Gradle for repair validation
         if: steps.baseline.outputs.eligible == 'true' && steps.agent.outputs.enabled == 'true' && steps.classification.outputs.repairable == 'true'
-        uses: gradle/actions/setup-gradle@v5
+        uses: gradle/actions/setup-gradle@v6
 
       - name: Ask Codex for a minimal repair
         if: steps.baseline.outputs.eligible == 'true' && steps.agent.outputs.enabled == 'true' && steps.classification.outputs.repairable == 'true'
