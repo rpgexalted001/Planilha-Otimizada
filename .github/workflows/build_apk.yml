@@ -164,6 +164,13 @@ jobs:
             EncounterSpecializationBoundaryTest
             EncounterPostCycleConvergenceTest
             EncounterCpuSafetyBudgetTest
+            DocumentImportServiceTest
+            GenericShareCodecHardeningTest
+            SheetPersistenceCoordinatorTest
+            BackupPersistenceCoordinatorTest
+            SheetIndexStoreRecoveryTest
+            NpcExternalImportValidatorTest
+            EncounterNpcStoreRecoveryTest
             AndroidSecurityBaselineTest
             EncounterGenerationDiagnosticsTest
             DragonBloodedSignaturePolicyTest

@@ -44,6 +44,8 @@ jobs:
             EncounterGenerationRulesRegressionTest
             EncounterMechanicalGoldenSnapshotTest
             DragonBloodedSignaturePolicyTest
+            NpcExternalImportValidatorTest
+            EncounterNpcStoreRecoveryTest
             DocumentImportServiceTest
             GenericShareCodecHardeningTest
             SheetPersistenceCoordinatorTest
