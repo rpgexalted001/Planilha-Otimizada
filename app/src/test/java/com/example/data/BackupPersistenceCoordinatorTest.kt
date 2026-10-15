@@ -42,4 +42,37 @@ class BackupPersistenceCoordinatorTest {
         coordinator.close()
         assertEquals(1, quantidade)
     }
+    @Test
+    fun `backup pendente eh preservado imediatamente no fechamento`() = runBlocking {
+        val escritos = Collections.synchronizedList(mutableListOf<CharacterSheet>())
+        val coordinator = BackupPersistenceCoordinator(
+            write = { sheet -> delay(80); escritos += sheet },
+            onFailure = { throw it }
+        )
+        coordinator.submit(CharacterSheet(id = "snapshot-antigo"))
+        coordinator.submit(CharacterSheet(id = "snapshot-atual"))
+        coordinator.close()
+        assertEquals("snapshot-atual", escritos.last().id)
+    }
+
+    @Test
+    fun `backup em voo eh substituido por snapshot mais novo ao fechar`() = runBlocking {
+        val escritos = Collections.synchronizedList(mutableListOf<String>())
+        val iniciou = kotlinx.coroutines.CompletableDeferred<Unit>()
+        val coordinator = BackupPersistenceCoordinator(
+            write = { sheet ->
+                if (sheet.id == "antigo") {
+                    iniciou.complete(Unit)
+                    delay(5_000)
+                }
+                escritos += sheet.id
+            },
+            onFailure = { throw it }
+        )
+        coordinator.submit(CharacterSheet(id = "antigo"))
+        iniciou.await()
+        coordinator.submit(CharacterSheet(id = "novo"))
+        coordinator.close()
+        assertEquals("novo", escritos.last())
+    }
 }
