@@ -37,7 +37,7 @@ jobs:
         id: baseline
         shell: bash
         env:
-          FAILED_SHA: \${{ github.event.workflow_run.head_sha }}
+          FAILED_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
           set -euo pipefail
           if [ "$(git rev-parse HEAD)" != "$FAILED_SHA" ]; then
@@ -127,12 +127,12 @@ jobs:
         run: |
           set -euo pipefail
           mapfile -t changed < <({ git diff --name-only HEAD; git ls-files --others --exclude-standard; } | sort -u)
-          if [ "\${#changed[@]}" -eq 0 ]; then
+          if [ "${#changed[@]}" -eq 0 ]; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "::notice::No safe repair proposed. The original build remains failed."
             exit 0
           fi
-          for file in "\${changed[@]}"; do
+          for file in "${changed[@]}"; do
             if [[ "$file" != app/src/main/*.kt && "$file" != app/src/main/**/*.kt ]]; then
               echo "::error::Rejected change outside approved Kotlin source: $file"
               exit 1
@@ -143,7 +143,7 @@ jobs:
             fi
           done
           echo "changed=true" >> "$GITHUB_OUTPUT"
-          printf 'Validated %s Kotlin source file(s).\n' "\${#changed[@]}"
+          printf 'Validated %s Kotlin source file(s).\n' "${#changed[@]}"
 
       - name: Run unit and regression tests on proposed repair
         if: steps.patch.outputs.changed == 'true'
@@ -162,8 +162,8 @@ jobs:
             DragonBloodedSignaturePolicyTest
             SmartphoneInstallabilityContractTest
           )
-          for class_name in "\${gate_classes[@]}"; do
-            if ! compgen -G "$results_dir/TEST-*\${class_name}.xml" > /dev/null; then
+          for class_name in "${gate_classes[@]}"; do
+            if ! compgen -G "$results_dir/TEST-*${class_name}.xml" > /dev/null; then
               echo "::error::Missing regression gate result: $class_name"
               exit 1
             fi
@@ -174,7 +174,7 @@ jobs:
         if: always() && steps.baseline.outputs.eligible == 'true'
         uses: actions/upload-artifact@v7
         with:
-          name: ci-repair-\${{ github.event.workflow_run.id }}-attempt-\${{ github.run_attempt }}
+          name: ci-repair-${{ github.event.workflow_run.id }}-attempt-${{ github.run_attempt }}
           path: |
             /tmp/exalted-ci/errors.txt
             app/build/reports/tests/testDebugUnitTest/
@@ -202,4 +202,4 @@ jobs:
           git -c http.extraheader="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)" push "https://github.com/${{ github.repository }}.git" "HEAD:refs/heads/$branch"
           gh pr create --draft --base main --head "$branch" \
             --title "Tested CI repair proposal for Exalted build $RUN_ID" \
-            --body "Automated Kotlin-only repair proposal for failed [Build APK run](https://github.com/\${{ github.repository }}/actions/runs/$RUN_ID). The complete debug unit-test suite and critical regression gates passed before this draft PR was created. **Manual review is mandatory.** No automatic merge, version change, new APK or build authorization."
+            --body "Automated Kotlin-only repair proposal for failed [Build APK run](https://github.com/${{ github.repository }}/actions/runs/$RUN_ID). The complete debug unit-test suite and critical regression gates passed before this draft PR was created. **Manual review is mandatory.** No automatic merge, version change, new APK or build authorization."
